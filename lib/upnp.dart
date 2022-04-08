@@ -8,6 +8,7 @@ import "package:xml/xml.dart" hide parse;
 import "package:xml/xml.dart" as xml show parse;
 
 import "package:crypto/crypto.dart";
+import 'package:collection/collection.dart' show IterableExtension;
 
 import "src/utils.dart";
 
