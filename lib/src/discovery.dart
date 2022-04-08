@@ -173,8 +173,8 @@ class DeviceDiscoverer {
   Timer? _discoverySearchTimer;
 
   Stream<DiscoveredClient> quickDiscoverClients({
-    Duration timeout: const Duration(seconds: 5),
-    Duration searchInterval: const Duration(seconds: 10),
+    Duration? timeout: const Duration(seconds: 5),
+    Duration? searchInterval: const Duration(seconds: 10),
     String? query,
     bool unique: true
   }) async* {
