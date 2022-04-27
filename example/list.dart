@@ -103,5 +103,5 @@ main(List<String> args) async {
     }
   }).asFuture();
 
-  await UpnpCommon.httpClient.close();
+  UpnpCommon.httpClient.close();
 }
