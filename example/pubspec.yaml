@@ -1,0 +1,11 @@
+name: upnp_example
+version: 2.0.1
+description: Universal Plugin and Play Host/Client
+homepage: https://github.com/SpinlockLabs/upnp.dart
+dependencies:
+  upnp:
+    path: ..
+  args: ^2.3.0
+environment:
+  sdk: '>=2.16.1 <3.0.0'
+
