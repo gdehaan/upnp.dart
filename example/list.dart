@@ -1,5 +1,7 @@
 import "dart:async";
 
+import 'package:args/args.dart';
+
 import "package:upnp/upnp.dart";
 import "package:upnp/src/utils.dart";
 
@@ -78,10 +80,20 @@ Future printDevice(Device device) async {
 }
 
 main(List<String> args) async {
+  var parser = ArgParser();
+  parser.addOption('port', abbr: 'p', defaultsTo: '0',
+    help: 'port number to listen on, default is 0, override to 1900 on strict networks'
+  );
+  parser.addOption('timeout', abbr: 't', defaultsTo: '5',
+    help: 'time to wait for UPnP UDP replies'
+  );
+  var results = parser.parse(args);
+  var rest = results.rest;
+  
   var discoverer = new DeviceDiscoverer();
-  await discoverer.start(ipv6: false);
+  await discoverer.start(ipv6: false, port: int.parse(results['port']));
   await discoverer
-    .quickDiscoverClients()
+    .quickDiscoverClients(timeout: Duration(seconds: int.parse(results['timeout'])))
     .listen((DiscoveredClient client) async {
     Device? device;
 
@@ -94,7 +106,7 @@ main(List<String> args) async {
       }());
     }
 
-    if (device == null || (args.isNotEmpty && !args.contains(device.uuid))) {
+    if (device == null || (rest.isNotEmpty && !rest.contains(device.uuid))) {
       return;
     }
 

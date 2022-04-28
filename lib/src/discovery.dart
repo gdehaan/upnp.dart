@@ -2,15 +2,18 @@ part of upnp;
 
 final InternetAddress _v4_Multicast = new InternetAddress("239.255.255.250");
 final InternetAddress _v6_Multicast = new InternetAddress("FF05::C");
+final int SSDP_MX = 2;
 
 class DeviceDiscoverer {
+  int listenPort = 0;
   List<RawDatagramSocket> _sockets = <RawDatagramSocket>[];
   StreamController<DiscoveredClient> _clientController =
     new StreamController.broadcast();
 
   late List<NetworkInterface> _interfaces;
 
-  Future start({bool ipv4: true, bool ipv6: true}) async {
+  Future start({bool ipv4: true, bool ipv6: true, int port: 0}) async {
+    listenPort = port;
     _interfaces = await NetworkInterface.list();
 
     if (ipv4) {
@@ -23,11 +26,33 @@ class DeviceDiscoverer {
   }
 
   _createSocket(InternetAddress address) async {
-    var socket = await RawDatagramSocket.bind(address, 0);
+    var socket = await RawDatagramSocket.bind(address, listenPort, reusePort: listenPort != 0);
 
     socket.broadcastEnabled = true;
     socket.readEventsEnabled = true;
-    socket.multicastHops = 50;
+    socket.multicastHops = SSDP_MX;
+
+    try {
+      socket.joinMulticast(_v4_Multicast);
+    } on OSError {
+    }
+
+    try {
+      socket.joinMulticast(_v6_Multicast);
+    } on OSError {
+    }
+
+    for (var interface in _interfaces) {
+      try {
+        socket.joinMulticast(_v4_Multicast, interface);
+      } on OSError {
+      }
+
+      try {
+        socket.joinMulticast(_v6_Multicast, interface);
+      } on OSError {
+      }
+    }
 
     socket.listen((event) {
       switch (event) {
@@ -77,28 +102,6 @@ class DeviceDiscoverer {
       }
     });
 
-    try {
-      socket.joinMulticast(_v4_Multicast);
-    } on OSError {
-    }
-
-    try {
-      socket.joinMulticast(_v6_Multicast);
-    } on OSError {
-    }
-
-    for (var interface in _interfaces) {
-      try {
-        socket.joinMulticast(_v4_Multicast, interface);
-      } on OSError {
-      }
-
-      try {
-        socket.joinMulticast(_v6_Multicast, interface);
-      } on OSError {
-      }
-    }
-
     _sockets.add(socket);
   }
 
@@ -130,9 +133,10 @@ class DeviceDiscoverer {
     buff.write("M-SEARCH * HTTP/1.1\r\n");
     buff.write("HOST: 239.255.255.250:1900\r\n");
     buff.write('MAN: "ssdp:discover"\r\n');
-    buff.write("MX: 1\r\n");
+    buff.write("MX: ${SSDP_MX}\r\n");
     buff.write("ST: ${searchTarget}\r\n");
-    buff.write("USER-AGENT: unix/5.1 UPnP/1.1 crash/1.0\r\n\r\n");
+    // buff.write("USER-AGENT: unix/5.1 UPnP/1.1 crash/1.0\r\n");
+    buff.write("\r\n");
     var data = utf8.encode(buff.toString());
 
     for (var socket in _sockets) {
